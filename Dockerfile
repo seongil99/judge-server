@@ -15,5 +15,6 @@ FROM ubuntu:latest
 WORKDIR /usr/local/bin
 
 COPY --from=builder /online_judge/target/release/online_judge .
+COPY ./test_code ./test_code
 
 CMD ["./online_judge"]
