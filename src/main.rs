@@ -70,13 +70,13 @@ fn main() {
 
         Command::new("sh") // linux env
             .arg("-c")
-            .arg("gcc -o test.exe test_code/test.c")
+            .arg("gcc -o test test_code/test.c")
             .output()
             .expect("failed to execute process");
 
         let mut child = Command::new("sh")
             .arg("-c") // linux env
-            .arg("test.exe")
+            .arg("test")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .spawn()
