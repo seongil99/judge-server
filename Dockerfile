@@ -12,6 +12,9 @@ RUN cargo build --release
 
 FROM ubuntu:latest
 
+RUN ["apt-get", "update"]
+RUN ["apt-get",  "install", "-y",  "gcc"]
+
 WORKDIR /usr/local/bin
 
 COPY --from=builder /online_judge/target/release/online_judge .
