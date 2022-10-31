@@ -1,23 +1,19 @@
-FROM rust:alpine AS builder
-
-WORKDIR /online_judge
-
-RUN cargo init .
-COPY ./Cargo* ./
-RUN cargo build --release && \
-  rm target/release/deps/online_judge*
-
-COPY . .
-RUN cargo build --release
-
 FROM ubuntu:latest
+
+WORKDIR /usr/local/bin/online_judge
 
 RUN ["apt-get", "update"]
 RUN ["apt-get",  "install", "-y",  "gcc"]
+RUN ["apt-get",  "install", "-y",  "libseccomp-dev"]
+RUN ["apt-get",  "install", "-y",  "curl"]
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
-WORKDIR /usr/local/bin
+RUN ["rustc", "--version"]
 
-COPY --from=builder /online_judge/target/release/online_judge .
-COPY ./test_code ./test_code
+COPY . .
 
-CMD ["./online_judge"]
+RUN ["cargo", "build", "--release"]
+RUN rm -rf target/deps/online_judge*
+
+CMD ["./target/release/online_judge"]
