@@ -1,19 +1,14 @@
-FROM ubuntu:latest
-
+FROM rust:latest as builder
 WORKDIR /usr/local/bin/online_judge
+RUN ["cargo", "init"]
+COPY ./Cargo.* .
+COPY ./src ./src
+COPY ./test_code ./test_code
+RUN apt-get update && apt-get install -y gcc && apt-get install -y libseccomp-dev && cargo build --release
 
-RUN ["apt-get", "update"]
-RUN ["apt-get",  "install", "-y",  "gcc"]
-RUN ["apt-get",  "install", "-y",  "libseccomp-dev"]
-RUN ["apt-get",  "install", "-y",  "curl"]
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-RUN ["rustc", "--version"]
-
-COPY . .
-
-RUN ["cargo", "build", "--release"]
-RUN rm -rf target/deps/online_judge*
-
+FROM ubuntu:latest
+WORKDIR /usr/local/bin/online_judge
+COPY --from=builder /usr/local/bin/online_judge .
+RUN apt-get update && apt-get install -y gcc
 CMD ["./target/release/online_judge"]
+
