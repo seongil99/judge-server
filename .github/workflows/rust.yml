@@ -16,7 +16,7 @@ jobs:
 
     steps:
     - name: download required command set
-      run: apt-get update && apt-get install -y gcc && apt-get install -y libseccomp-dev 
+      run: sudo apt-get update && sudo apt-get install -y gcc && sudo apt-get install -y libseccomp-dev 
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose
