@@ -1,34 +1,17 @@
-FROM rust:alpine AS chef
-
-WORKDIR /usr/src/online_judge
-
-RUN set -eux; \
-  apk add --no-cache musl-dev; \
-  cargo install cargo-chef; \
-  rm -rf $CARGO_HOME/registry
-
-FROM chef as planner
-
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-FROM chef AS builder
+FROM rust:alpine
 
 RUN apk add --no-cache libseccomp-dev
+RUN apk add --no-cache libseccomp-static
+RUN apk add --no-cache libseccomp
+RUN apk add --no-cache vim
+RUN apk add --no-cache git
+RUN apk add --no-cache build-base
+RUN apk add --no-cache rustfmt
 
-COPY --from=planner /usr/src/online_judge/recipe.json .
-RUN cargo chef cook --release --recipe-path recipe.json
+RUN mkdir /app
+WORKDIR /app
 
 COPY . .
-RUN cargo build --release
+RUN rustup component add rustfmt
 
-FROM alpine:latest
-
-WORKDIR /usr/local/bin
-
-RUN apk add --no-cache build-base
-
-COPY --from=builder /usr/src/online_judge/target/release/online_judge .
-COPY ./test_code ./test_code
-
-CMD ["./online_judge"]
+CMD ["/bin/sh"]

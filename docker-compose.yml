@@ -1,5 +1,8 @@
 version: "3"
 
 services:
-  online-judge:
+  test:
     build: .
+    volumes:
+      - .:/app
+    tty: true

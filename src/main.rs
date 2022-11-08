@@ -1,112 +1,71 @@
-mod jail;
-mod process;
+use seccompiler::{BpfProgram, SeccompAction, SeccompFilter};
+use std::{convert::TryInto, ffi::c_char};
 
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::process::Command;
-use std::str;
+//todo get accurate memory size of a.out
 
 fn main() {
-    // test code
-    if cfg!(target_os = "windows") {
-        Command::new("cmd")
-            .args(["/C", "echo hello"])
-            .output()
-            .expect("failed to execute process")
-    } else {
-        Command::new("sh")
-            .arg("-c")
-            .arg("echo hello")
-            .output()
-            .expect("failed to execute process")
+    //compile main.c to a.out with gcc
+    unsafe {
+        libc::system("gcc main.c\0".as_ptr() as *const c_char);
+    }
+
+    let rlim_mem = libc::rlimit {
+        rlim_cur: 250000000,
+        rlim_max: libc::RLIM_INFINITY,
+    };
+    let rlim_cpu = libc::rlimit {
+        rlim_cur: 3,
+        rlim_max: libc::RLIM_INFINITY,
     };
 
-    if cfg!(target_os = "windows") {
-        let input_file = File::open("test_code/input.txt").unwrap();
-        let mut buf_reader = BufReader::new(input_file);
-        let mut input_text = String::new();
-        buf_reader.read_to_string(&mut input_text).unwrap();
-        println!("input_text:  {}", input_text);
+    unsafe {
+        libc::setrlimit(libc::RLIMIT_AS, &rlim_mem);
+        libc::setrlimit(libc::RLIMIT_CPU, &rlim_cpu);
+    }
 
-        Command::new("cmd") // windows env
-            .args(["/C", "gcc -o test.exe test_code/test.c"])
-            .output()
-            .expect("failed to execute process");
+    let mut ruse: libc::rusage = unsafe { std::mem::zeroed() };
 
-        let mut child = Command::new("cmd") // windows env
-            .args(["/C", "test.exe"])
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .spawn()
-            .expect("failed to execute process");
+    let pid = unsafe { libc::fork() };
+    if pid == 0 {
+        // Child process
 
-        {
-            let stdin = child.stdin.as_mut().expect("failed to open stdin");
-            stdin
-                .write_all(input_text.as_bytes())
-                .expect("failed to write to stdin");
+        // Load the seccomp filter
+        let filter: BpfProgram = SeccompFilter::new(
+            vec![(libc::SYS_open, vec![])].into_iter().collect(),
+            SeccompAction::Allow,
+            SeccompAction::Trap,
+            std::env::consts::ARCH.try_into().unwrap(),
+        )
+        .unwrap()
+        .try_into()
+        .unwrap();
+        seccompiler::apply_filter(&filter).unwrap();
+
+        unsafe {
+            //run a.out
+            libc::execve(
+                "/usr/bin/time\0".as_ptr() as *const c_char,
+                [
+                    "/usr/bin/time\0".as_ptr() as *const c_char,
+                    "./a.out\0".as_ptr() as *const c_char,
+                    std::ptr::null(),
+                ]
+                .as_ptr(),
+                std::ptr::null(),
+            );
         }
+    } else if pid > 0 {
+        // Parent process
+        let mut status: libc::c_int = 0;
+        unsafe { libc::wait(&mut status) };
 
-        let output = child.wait_with_output().expect("failed to wait on child");
+        unsafe { libc::getrusage(libc::RUSAGE_CHILDREN, &mut ruse) };
 
-        let output_text = match str::from_utf8(&output.stdout) {
-            Ok(v) => v.trim(),
-            Err(_) => panic!("failed to convert output to string: {:?}", output.stdout),
-        };
-        println!("output_text: {}", output_text);
+        println!("memory usage: {} kb", ruse.ru_maxrss);
+        println!("time usage: {} ms", ruse.ru_utime.tv_usec / 1000);
 
-        let answer_file = File::open("test_code/answer.txt").unwrap();
-        let mut buf_reader = BufReader::new(answer_file);
-        let mut answer_text = String::new();
-        buf_reader.read_to_string(&mut answer_text).unwrap();
-
-        assert_eq!(output_text, answer_text.trim());
-
-        println!("Success!");
+        println!("Child exited with status {}", status);
     } else {
-        let input_file = File::open("test_code/input.txt").unwrap();
-        let mut buf_reader = BufReader::new(input_file);
-        let mut input_text = String::new();
-        buf_reader.read_to_string(&mut input_text).unwrap();
-        println!("input_text:  {}", input_text);
-
-        Command::new("sh") // linux env
-            .arg("-c")
-            .arg("gcc -o test.out test_code/test.c")
-            .output()
-            .expect("failed to execute process");
-
-        let mut child = Command::new("sh")
-            .arg("-c") // linux env
-            .arg("./test.out")
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .spawn()
-            .expect("failed to execute process");
-
-        {
-            let stdin = child.stdin.as_mut().expect("failed to open stdin");
-            stdin
-                .write_all(input_text.as_bytes())
-                .expect("failed to write to stdin");
-        }
-
-        let output = child.wait_with_output().expect("failed to wait on child");
-
-        let output_text = match str::from_utf8(&output.stdout) {
-            Ok(v) => v.trim(),
-            Err(_) => panic!("failed to convert output to string: {:?}", output.stdout),
-        };
-        println!("output_text: {}", output_text);
-
-        let answer_file = File::open("test_code/answer.txt").unwrap();
-        let mut buf_reader = BufReader::new(answer_file);
-        let mut answer_text = String::new();
-        buf_reader.read_to_string(&mut answer_text).unwrap();
-
-        assert_eq!(output_text, answer_text.trim());
-
-        println!("Success!");
+        panic!("Fork failed");
     }
 }
