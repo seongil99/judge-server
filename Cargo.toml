@@ -1,5 +1,5 @@
 [package]
-name = "seccomp_test"
+name = "online_judge"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,5 +1,10 @@
 use seccompiler::{BpfProgram, SeccompAction, SeccompFilter};
-use std::{convert::TryInto, ffi::c_char};
+use std::{
+    convert::TryInto,
+    ffi::c_char,
+    fs::File,
+    io::{BufReader, Read},
+};
 
 // This program does not work on aarch64.
 // because the syscall number is different.
@@ -33,8 +38,8 @@ fn main() {
     let fd_out = unsafe {
         libc::open(
             "output1\0".as_ptr() as *const c_char,
-            libc::O_WRONLY | libc::O_CREAT,
-            0644,
+            libc::O_WRONLY | libc::O_CREAT | libc::O_TRUNC,
+            libc::S_IRUSR | libc::S_IWUSR | libc::S_IRGRP | libc::S_IWGRP | libc::S_IROTH, // 0644
         )
     };
 
@@ -118,6 +123,23 @@ fn main() {
         unsafe { libc::wait(&mut status) };
 
         println!("Child exited with status {}", status);
+
+        // compare output1 to answer1
+        let output_file = File::open("output1").unwrap();
+        let mut buf_reader = BufReader::new(output_file);
+        let mut output_text = String::new();
+        buf_reader.read_to_string(&mut output_text).unwrap();
+
+        let answer_file = File::open("answer1").unwrap();
+        let mut buf_reader = BufReader::new(answer_file);
+        let mut answer_text = String::new();
+        buf_reader.read_to_string(&mut answer_text).unwrap();
+
+        if output_text == answer_text {
+            println!("Correct answer");
+        } else {
+            println!("Wrong answer");
+        }
     } else {
         panic!("Fork failed");
     }
