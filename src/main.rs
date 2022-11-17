@@ -1,6 +1,17 @@
+mod consumer;
 mod judge;
-mod server;
+mod publisher;
 
 fn main() {
-    server::main();
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
+    tracing_subscriber::fmt::init();
+
+    let addr = "amqp://172.30.176.1:5672/%2f";
+
+    let consume_channel = consumer::create_channel(addr);
+    let publish_channel = publisher::create_channel(addr);
+
+    consumer::consume(consume_channel);
 }

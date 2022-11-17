@@ -6,7 +6,6 @@ RUN apk add --no-cache libseccomp
 RUN apk add --no-cache vim
 RUN apk add --no-cache git
 RUN apk add --no-cache build-base
-RUN apk add --no-cache rustfmt
 
 RUN mkdir /app
 WORKDIR /app
