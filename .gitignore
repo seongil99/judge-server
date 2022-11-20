@@ -1,6 +1,7 @@
 /target/*
-/test_cases/*
-/test_cases/**
+/test_cases/input/*
+/test_cases/output/*
+/test_cases/result/*
 *.exe
 *.o
 *.out
