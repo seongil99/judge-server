@@ -5,6 +5,7 @@ use std::{
     ffi::c_char,
     fs::File,
     io::{BufReader, Read, Write},
+    process::Command,
 };
 use tracing::info;
 
@@ -83,20 +84,54 @@ impl Limits {
 }
 
 pub fn main() {
-    //compile main.c to a.out with gcc
-    unsafe {
-        libc::system("gcc main.c\0".as_ptr() as *const c_char);
-    }
-
     let mut result_time_file = File::create("result/time.txt").unwrap();
     result_time_file.write_all("0".as_bytes()).unwrap();
 
     let mut result_memory_file = File::create("result/memory.txt").unwrap();
     result_memory_file.write_all("0".as_bytes()).unwrap();
 
+    let mut compile_result_file = File::create("result/compile_result.txt").unwrap();
+    compile_result_file.write_all("".as_bytes()).unwrap();
+
+    //compile main.c to a.out with gcc
+    let compile_result = Command::new("gcc")
+        .arg("-O2")
+        .arg("-Wall")
+        .arg("-std=c99")
+        .arg("-static")
+        .arg("main.c")
+        .status()
+        .expect("failed to execute process");
+
+    //check compile result
+    match compile_result.success() {
+        true => {
+            let mut compile_result_file = File::create("result/compile_result.txt").unwrap();
+            compile_result_file
+                .write_all("0".as_bytes())
+                .expect("failed to write compile result");
+        }
+        false => {
+            let mut compile_result_file = File::create("result/compile_result.txt").unwrap();
+            compile_result_file
+                .write_all("1".as_bytes())
+                .expect("failed to write compile result");
+            return;
+        }
+    }
+
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
-    let input_len = input_files.count();
+    let input_files_txt: Vec<_> = input_files
+        .filter_map(|e| e.ok())
+        .filter(|e| match e.path().extension() {
+            Some(ext) => ext == "txt",
+            None => false,
+        })
+        .collect();
+    let input_len = input_files_txt.len();
+
+    info!("input_len: {}", input_len);
 
     // set rlimit
     let rlim_mem = libc::rlimit {

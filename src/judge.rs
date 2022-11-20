@@ -1,6 +1,8 @@
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{BufReader, Read, Write};
 use std::process::Command;
+
+use tracing::info;
 
 pub struct JudgeResult {
     pub status: Status,
@@ -12,6 +14,7 @@ pub struct JudgeResult {
 pub enum Status {
     Accepted,
     WrongAnswer,
+    CompileError,
     TimeLimitExceeded,
     MemoryLimitExceeded,
     RuntimeError,
@@ -32,7 +35,16 @@ impl JudgeResult {
 pub fn main(stasus: Status) {
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
-    let input_len = input_files.count();
+    let input_files_txt: Vec<_> = input_files
+        .filter_map(|e| e.ok())
+        .filter(|e| match e.path().extension() {
+            Some(ext) => ext == "txt",
+            None => false,
+        })
+        .collect();
+    let input_len = input_files_txt.len();
+
+    info!(?input_len, "input_len");
 
     let mut result = true;
 
@@ -63,18 +75,23 @@ pub fn main(stasus: Status) {
 
     Command::new("rm")
         .arg("a.out")
-        .output()
-        .expect("failed to execute process");
+        .spawn()
+        .expect("failed to execute process")
+        .wait()
+        .expect("failed to wait on rm a.out");
+
+    Command::new("sh")
+        .arg("-c")
+        .arg("rm ./test_cases/*/*.txt")
+        .spawn()
+        .expect("failed to execute process")
+        .wait()
+        .expect("failed to wait on rm test_cases/output/*");
+
     Command::new("rm")
-        .arg("test_cases/input/*")
-        .output()
-        .expect("failed to execute process");
-    Command::new("rm")
-        .arg("test_cases/output/*")
-        .output()
-        .expect("failed to execute process");
-    Command::new("rm")
-        .arg("test_cases/result/*")
-        .output()
-        .expect("failed to execute process");
+        .arg("main.c")
+        .spawn()
+        .expect("failed to execute process")
+        .wait()
+        .expect("failed to wait on rm main.c");
 }
