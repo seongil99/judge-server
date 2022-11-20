@@ -2,16 +2,19 @@ version: "3"
 
 services:
   test:
+    container_name: judge-server
     build: .
     volumes:
       - .:/app
     tty: true
 
   rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:3.11-management
     ports:
       - "5672:5672"
       - "15672:15672"
 
 networks:
-  judge-server: {}
+  judge-server:
+    name: "judge-server-net"
