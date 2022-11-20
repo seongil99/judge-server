@@ -1,1 +1,8 @@
-#include<stdio.h>\n  int main()\n  {\n     int a, b;\n    scanf("%d %d", &a, &b);\n    printf("%d", a+b);\n    return 0;\n }\n
+#include<stdio.h>
+  int main()
+  {
+     int a, b;
+    scanf("%d %d", &a, &b);
+    printf("%d", a+b);
+    return 0;
+ }
