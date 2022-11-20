@@ -1,5 +1,10 @@
-/target
+/target/*
+/test_cases/*
 *.exe
 *.o
 *.out
+*.c
+*.cpp
 .vscode/
+
+!/*/.gitkeep
