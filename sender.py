@@ -6,7 +6,18 @@ QUEUE_NAME = 'to_rust'
 
 data = {
     'language': 'C',
-    'code': '#include<stdio.h>\n  int main()\n  {\n     int a, b;\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\", a+b);\n    return 0;\n }\n'
+    'code': '#include<stdio.h>\n  int main()\n  {\n     int a, b;\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\", a+b);\n    return 0;\n }\n',
+    'answer_id': 123,
+    'testcases': [
+        {
+            'input': '1 2 3',
+            'output': '4 5 6'
+        },
+        {
+            'input': '1',
+            'output': '4'
+        }
+    ]
 }
 
 payload = json.dumps(data)
