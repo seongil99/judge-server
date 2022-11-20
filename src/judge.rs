@@ -34,7 +34,7 @@ pub fn main(stasus: Status) {
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_len = input_files.count();
 
-    let result = true;
+    let mut result = true;
 
     for i in 0..input_len {
         let output_path = String::from("test_cases/1/output/output") + &i.to_string() + ".txt";
