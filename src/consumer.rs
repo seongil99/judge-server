@@ -54,10 +54,15 @@ pub fn consume(chan: lapin::Channel) {
                     .ack(BasicAckOptions::default())
                     .await
                     .expect("basic_ack");
+
                 let payload = &delivery.data;
+
                 let problem = Problem::from_payload(&payload);
                 problem.write_code_file();
+                problem.write_testcase_file();
+
                 executor::main();
+
                 judge::main(Status::Accepted);
             }
         }

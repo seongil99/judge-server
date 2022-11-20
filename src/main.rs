@@ -1,5 +1,3 @@
-use std::cmp::max;
-
 mod consumer;
 mod executor;
 mod filter;
@@ -12,7 +10,7 @@ fn main() {
     }
     tracing_subscriber::fmt::init();
 
-    let addr = "amqp://judge-server-rabbitmq-1:5672/%2f";
+    let addr = "amqp://rust-with-gcc-rabbitmq-1:5672/%2f";
 
     let consume_channel = consumer::create_channel(addr);
     let publish_channel = publisher::create_channel(addr);

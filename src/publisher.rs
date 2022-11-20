@@ -5,8 +5,17 @@ use lapin::{
     types::FieldTable,
     BasicProperties, Connection, ConnectionProperties,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::info;
+
+#[derive(Serialize, Deserialize)]
+pub struct Payload {
+    answer_id: u64,
+    memory: u64,
+    time: u64,
+    result: String,
+}
 
 pub fn create_channel(addr: &str) -> lapin::Channel {
     let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| addr.into());

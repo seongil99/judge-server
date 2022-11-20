@@ -6,6 +6,7 @@ use std::{
     fs::File,
     io::{BufReader, Read, Write},
 };
+use tracing::info;
 
 use crate::filter;
 use crate::judge;
@@ -37,10 +38,13 @@ impl Problem {
 
     pub fn write_testcase_file(&self) {
         for i in 0..self.testcases.len() {
-            let mut file = File::create(format!("test_cases/input/input{}.txt", i)).unwrap();
+            let input_path = String::from("test_cases/input/input") + &i.to_string() + ".txt";
+            let output_path = String::from("test_cases/output/output") + &i.to_string() + ".txt";
+
+            let mut file = File::create(input_path).unwrap();
             file.write_all(self.testcases[i].input.as_bytes()).unwrap();
 
-            let mut file = File::create(format!("test_cases/output/output{}.txt", i)).unwrap();
+            let mut file = File::create(output_path).unwrap();
             file.write_all(self.testcases[i].output.as_bytes()).unwrap();
         }
     }
@@ -90,7 +94,7 @@ pub fn main() {
     let mut result_memory_file = File::create("result/memory.txt").unwrap();
     result_memory_file.write_all("0".as_bytes()).unwrap();
 
-    let input_files_path = "test_cases/1/input";
+    let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_len = input_files.count();
 
@@ -117,9 +121,8 @@ pub fn main() {
     for i in 0..input_len {
         println!("test case : {}", i);
 
-        let input_path = String::from("test_cases/1/input/input") + &i.to_string() + ".txt" + "\0";
-        let output_path =
-            String::from("test_cases/1/result/result") + &i.to_string() + ".txt" + "\0";
+        let input_path = String::from("test_cases/input/input") + &i.to_string() + ".txt" + "\0";
+        let output_path = String::from("test_cases/result/result") + &i.to_string() + ".txt" + "\0";
 
         // open input file and output file
         let fd_in = unsafe { libc::open(input_path.as_ptr() as *const c_char, libc::O_RDONLY) };

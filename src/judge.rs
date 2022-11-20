@@ -30,15 +30,15 @@ impl JudgeResult {
 }
 
 pub fn main(stasus: Status) {
-    let input_files_path = "test_cases/1/input";
+    let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_len = input_files.count();
 
     let mut result = true;
 
     for i in 0..input_len {
-        let output_path = String::from("test_cases/1/output/output") + &i.to_string() + ".txt";
-        let answer_path = String::from("test_cases/1/result/result") + &i.to_string() + ".txt";
+        let output_path = String::from("test_cases/output/output") + &i.to_string() + ".txt";
+        let answer_path = String::from("test_cases/result/result") + &i.to_string() + ".txt";
 
         let output_file = File::open(output_path).unwrap();
         let mut buf_reader = BufReader::new(output_file);
@@ -63,6 +63,18 @@ pub fn main(stasus: Status) {
 
     Command::new("rm")
         .arg("a.out")
+        .output()
+        .expect("failed to execute process");
+    Command::new("rm")
+        .arg("test_cases/input/*")
+        .output()
+        .expect("failed to execute process");
+    Command::new("rm")
+        .arg("test_cases/output/*")
+        .output()
+        .expect("failed to execute process");
+    Command::new("rm")
+        .arg("test_cases/result/*")
         .output()
         .expect("failed to execute process");
 }
