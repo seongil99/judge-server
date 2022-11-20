@@ -1,17 +1,27 @@
+use judge::Status;
 use serde::{Deserialize, Serialize};
 use std::{
-    cmp::max,
+    cmp,
     ffi::c_char,
     fs::File,
     io::{BufReader, Read, Write},
 };
 
 use crate::filter;
+use crate::judge;
+
+#[derive(Serialize, Deserialize)]
+pub struct TestCase {
+    pub input: String,
+    pub output: String,
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct Problem {
+    answer_id: u64,
     language: String,
     code: String,
+    testcases: Vec<TestCase>,
 }
 
 impl Problem {
@@ -23,6 +33,16 @@ impl Problem {
     pub fn write_code_file(&self) {
         let mut file = File::create("main.c").unwrap();
         file.write_all(self.code.as_bytes()).unwrap();
+    }
+
+    pub fn write_testcase_file(&self) {
+        for i in 0..self.testcases.len() {
+            let mut file = File::create(format!("test_cases/input/input{}.txt", i)).unwrap();
+            file.write_all(self.testcases[i].input.as_bytes()).unwrap();
+
+            let mut file = File::create(format!("test_cases/output/output{}.txt", i)).unwrap();
+            file.write_all(self.testcases[i].output.as_bytes()).unwrap();
+        }
     }
 }
 
@@ -64,8 +84,11 @@ pub fn main() {
         libc::system("gcc main.c\0".as_ptr() as *const c_char);
     }
 
-    let mut memory_usage: i64 = 0;
-    let mut time_usage: i64 = 0;
+    let mut result_time_file = File::create("result/time.txt").unwrap();
+    result_time_file.write_all("0".as_bytes()).unwrap();
+
+    let mut result_memory_file = File::create("result/memory.txt").unwrap();
+    result_memory_file.write_all("0".as_bytes()).unwrap();
 
     let input_files_path = "test_cases/1/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
@@ -96,7 +119,7 @@ pub fn main() {
 
         let input_path = String::from("test_cases/1/input/input") + &i.to_string() + ".txt" + "\0";
         let output_path =
-            String::from("test_cases/1/output/output") + &i.to_string() + ".txt" + "\0";
+            String::from("test_cases/1/result/result") + &i.to_string() + ".txt" + "\0";
 
         // open input file and output file
         let fd_in = unsafe { libc::open(input_path.as_ptr() as *const c_char, libc::O_RDONLY) };
@@ -150,20 +173,40 @@ pub fn main() {
                 println!("main.c exited with status {}", status);
 
                 // get resource usage from child process
-                unsafe { libc::getrusage(libc::RUSAGE_CHILDREN, &mut ruse) };
+                unsafe {
+                    libc::getrusage(libc::RUSAGE_CHILDREN, &mut ruse);
+                }
 
-                let mem = &mut memory_usage;
-                *mem = max(*mem, ruse.ru_maxrss as i64);
+                let mut result_time_file = File::open("result/time.txt").unwrap();
+                let mut result_time = String::new();
+                result_time_file.read_to_string(&mut result_time).unwrap();
+                let result_time: i64 = result_time.parse().unwrap();
+                let time = ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000;
+                match result_time.cmp(&time) {
+                    cmp::Ordering::Less => {
+                        let mut result_time_file = File::create("result/time.txt").unwrap();
+                        result_time_file
+                            .write_all(time.to_string().as_bytes())
+                            .unwrap();
+                    }
+                    _ => {}
+                }
 
-                let time = &mut time_usage;
-                *time = max(*time, ruse.ru_utime.tv_sec as i64);
-
-                println!("memory usage: {} kb", ruse.ru_maxrss);
-                println!(
-                    "time usage: {}{} ms",
-                    ruse.ru_utime.tv_sec,
-                    ruse.ru_utime.tv_usec / 1000
-                );
+                let mut result_memory_file = File::open("result/memory.txt").unwrap();
+                let mut result_memory = String::new();
+                result_memory_file
+                    .read_to_string(&mut result_memory)
+                    .unwrap();
+                let result_memory: i64 = result_memory.parse().unwrap();
+                match result_memory.cmp(&ruse.ru_maxrss) {
+                    cmp::Ordering::Less => {
+                        let mut result_memory_file = File::create("result/memory.txt").unwrap();
+                        result_memory_file
+                            .write_all(ruse.ru_maxrss.to_string().as_bytes())
+                            .unwrap();
+                    }
+                    _ => {}
+                }
             } else {
                 panic!("fork failed");
             }
@@ -173,22 +216,6 @@ pub fn main() {
             // wait for child process
             let mut status: libc::c_int = 0;
             unsafe { libc::wait(&mut status) };
-
-            // compare output1 to answer1
-            let output_path = String::from("test_cases/1/output/output") + &i.to_string() + ".txt";
-            let answer_path = String::from("test_cases/1/answer/answer") + &i.to_string() + ".txt";
-            let output_file = File::open(output_path).unwrap();
-            let mut buf_reader = BufReader::new(output_file);
-            let mut output_text = String::new();
-            buf_reader.read_to_string(&mut output_text).unwrap();
-
-            let answer_file = File::open(answer_path).unwrap();
-            let mut buf_reader = BufReader::new(answer_file);
-            let mut answer_text = String::new();
-            buf_reader.read_to_string(&mut answer_text).unwrap();
-
-            assert_eq!(output_text.trim_end(), answer_text.trim_end());
-            println!("output{} is correct", i);
         } else {
             panic!("Fork failed");
         }

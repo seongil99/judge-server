@@ -2,7 +2,10 @@ use futures_lite::StreamExt;
 use lapin::{options::*, types::FieldTable, Connection, ConnectionProperties};
 use tracing::info;
 
-use crate::executor::{self, Problem};
+use crate::{
+    executor::{self, Problem},
+    judge::{self, Status},
+};
 
 pub fn create_channel(addr: &str) -> lapin::Channel {
     let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| addr.into());
@@ -55,6 +58,7 @@ pub fn consume(chan: lapin::Channel) {
                 let problem = Problem::from_payload(&payload);
                 problem.write_code_file();
                 executor::main();
+                judge::main(Status::Accepted);
             }
         }
     })
