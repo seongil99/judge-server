@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  test:
+    build: .
+    volumes:
+      - .:/app
+    tty: true
+
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+networks:
+  judge-server: {}

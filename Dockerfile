@@ -1,23 +1,16 @@
-FROM rust:alpine AS builder
+FROM rust:alpine
 
-WORKDIR /online_judge
+RUN apk add --no-cache libseccomp-dev
+RUN apk add --no-cache libseccomp-static
+RUN apk add --no-cache libseccomp
+RUN apk add --no-cache vim
+RUN apk add --no-cache git
+RUN apk add --no-cache build-base
 
-RUN cargo init .
-COPY ./Cargo* ./
-RUN cargo build --release && \
-  rm target/release/deps/online_judge*
+RUN mkdir /app
+WORKDIR /app
 
 COPY . .
-RUN cargo build --release
+RUN rustup component add rustfmt
 
-FROM ubuntu:latest
-
-RUN ["apt-get", "update"]
-RUN ["apt-get",  "install", "-y",  "gcc"]
-
-WORKDIR /usr/local/bin
-
-COPY --from=builder /online_judge/target/release/online_judge .
-COPY ./test_code ./test_code
-
-CMD ["./online_judge"]
+CMD ["/bin/sh"]
