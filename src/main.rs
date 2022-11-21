@@ -1,3 +1,5 @@
+use judge::JudgeResult;
+
 mod consumer;
 mod executor;
 mod filter;
@@ -16,4 +18,6 @@ fn main() {
     let publish_channel = publisher::create_channel(addr);
 
     consumer::consume(consume_channel);
+    let msg: JudgeResult = JudgeResult::new(judge::Status::Accepted, 1, 2, 123);
+    publisher::publish(publish_channel, msg);
 }
