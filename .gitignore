@@ -9,4 +9,4 @@
 *.cpp
 .vscode/
 
-!/*/.gitkeep
+!/**/.gitkeep
