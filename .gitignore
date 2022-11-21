@@ -1,6 +1,8 @@
 /target/*
-/test_cases/*
-/test_cases/**
+/result/*
+/test_cases/input/*
+/test_cases/output/*
+/test_cases/result/*
 *.exe
 *.o
 *.out
@@ -8,4 +10,4 @@
 *.cpp
 .vscode/
 
-!/*/.gitkeep
+!/**/.gitkeep

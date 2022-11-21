@@ -4,7 +4,7 @@ use tracing::info;
 
 use crate::{
     executor::{self, Problem},
-    judge::{self, Status},
+    judge::{self, JudgeResult, Status},
 };
 
 pub fn create_channel(addr: &str) -> lapin::Channel {
@@ -36,6 +36,7 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
 }
 
 pub fn consume(chan: lapin::Channel) {
+    let addr = "amqp://rabbitmq:5672/%2f";
     async_global_executor::block_on(async {
         let mut consumer = chan
             .basic_consume(
@@ -63,7 +64,13 @@ pub fn consume(chan: lapin::Channel) {
 
                 executor::main();
 
-                judge::main(Status::Accepted);
+                judge::main();
+
+                let mut judge_result = JudgeResult::from_result_files(Status::Accepted);
+                let judge_result_json = serde_json::to_string(&judge_result).unwrap();
+                info!(?judge_result_json, "judge_result_json");
+
+                judge::clean();
             }
         }
     })
