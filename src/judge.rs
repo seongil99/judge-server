@@ -13,10 +13,11 @@ pub struct JudgeResult {
 
 pub enum Status {
     Accepted,
+    Proceeding,
     WrongAnswer,
-    CompileError,
     TimeLimitExceeded,
     MemoryLimitExceeded,
+    CompileError,
     RuntimeError,
     SystemError,
 }
@@ -28,6 +29,21 @@ impl JudgeResult {
             time,
             memory,
             message,
+        }
+    }
+}
+
+impl Status {
+    pub fn to_string(&self) -> String {
+        match self {
+            Status::Accepted => "Accepted".to_string(),
+            Status::Proceeding => "Proceeding".to_string(),
+            Status::WrongAnswer => "WrongAnswer".to_string(),
+            Status::TimeLimitExceeded => "TimeLimitExceeded".to_string(),
+            Status::MemoryLimitExceeded => "MemoryLimitExceeded".to_string(),
+            Status::CompileError => "CompileError".to_string(),
+            Status::RuntimeError => "RuntimeError".to_string(),
+            Status::SystemError => "SystemError".to_string(),
         }
     }
 }
@@ -46,7 +62,7 @@ pub fn main(stasus: Status) {
 
     info!(?input_len, "input_len");
 
-    let mut result = true;
+    let mut judge_status = Status::Accepted;
 
     for i in 0..input_len {
         let output_path = String::from("test_cases/output/output") + &i.to_string() + ".txt";
@@ -68,7 +84,7 @@ pub fn main(stasus: Status) {
             }
             false => {
                 println!("{}: Wrong Answer", i);
-                result = false;
+                result = Status::WrongAnswer;
             }
         }
     }
