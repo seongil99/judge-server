@@ -7,10 +7,10 @@ use tracing::info;
 
 #[derive(Serialize, Deserialize)]
 pub struct JudgeResult {
-    pub status: Status,
-    pub time: u64,
-    pub memory: u64,
-    pub message: String,
+    result: String,
+    time: u64,
+    memory: u64,
+    answer_id: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -26,16 +26,27 @@ pub enum Status {
 }
 
 impl JudgeResult {
-    pub fn new(status: Status, time: u64, memory: u64, message: String) -> Self {
+    fn cvt_status_string(result: Status) -> String {
+        String::from(match result {
+            Accepted => "Accepted",
+            WrongAnswer => "WrongAnswer",
+            TimeLimitExceeded => "TimeLimitExceeded",
+            MemoryLimitExceeded => "MemoryLimitExceeded",
+            RuntimeError => "RuntimeError",
+            SystemError => "SystemError",
+        })
+    }
+
+    pub fn new(result: Status, time: u64, memory: u64, answer_id: u64) -> Self {
         Self {
-            status,
             time,
             memory,
-            message,
+            answer_id,
+            result: JudgeResult::cvt_status_string(result),
         }
     }
 
-    pub fn from_result_files(status: Status) -> Self {
+    pub fn from_result_files(status: Status, answer_id: u64) -> Self {
         let mut result_file_memory = File::open("result/memory.txt").unwrap();
         let mut result_file_time = File::open("result/time.txt").unwrap();
 
@@ -60,10 +71,10 @@ impl JudgeResult {
         };
 
         Self {
-            status,
+            answer_id,
             time,
             memory,
-            message: result_string,
+            result: result_string,
         }
     }
 }

@@ -5,20 +5,13 @@ use lapin::{
     types::FieldTable,
     BasicProperties, Connection, ConnectionProperties,
 };
-use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::info;
 
+use crate::judge::JudgeResult;
+
 const QUEUE_NAME: &str = "to_spring";
 const QUEUE_ADDR: &str = "ampq://rabbitmq:5672/%2f";
-
-#[derive(Serialize, Deserialize)]
-pub struct Payload {
-    pub answer_id: u64,
-    pub memory: u64,
-    pub time: u64,
-    pub result: String,
-}
 
 pub fn create_channel(addr: &str) -> lapin::Channel {
     let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| addr.into());
@@ -48,7 +41,7 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
     })
 }
 
-pub fn publish(chan: lapin::Channel, msg: Payload) {
+pub fn publish(chan: lapin::Channel, msg: JudgeResult) {
     async_global_executor::block_on(async {
     let queue = chan
         .queue_declare(

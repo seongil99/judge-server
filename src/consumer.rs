@@ -66,7 +66,8 @@ pub fn consume(chan: lapin::Channel) {
 
                 judge::main();
 
-                let mut judge_result = JudgeResult::from_result_files(Status::Accepted);
+                let mut judge_result =
+                    JudgeResult::from_result_files(Status::Accepted, problem.answer_id);
                 let judge_result_json = serde_json::to_string(&judge_result).unwrap();
                 info!(?judge_result_json, "judge_result_json");
 

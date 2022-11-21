@@ -20,7 +20,7 @@ pub struct TestCase {
 
 #[derive(Deserialize, Serialize)]
 pub struct Problem {
-    answer_id: u64,
+    pub answer_id: u64,
     language: String,
     code: String,
     testcases: Vec<TestCase>,
