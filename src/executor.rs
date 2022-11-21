@@ -7,7 +7,6 @@ use std::{
     io::{BufReader, Read, Write},
     process::Command,
 };
-use tracing::info;
 
 use crate::filter;
 use crate::judge;
@@ -131,8 +130,6 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
     let input_len = input_files_txt.len();
 
-    info!("input_len: {}", input_len);
-
     // set rlimit
     let rlim_mem = libc::rlimit {
         rlim_cur: 250000000,
@@ -151,11 +148,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
     // init rusage
     let mut ruse: libc::rusage = unsafe { std::mem::zeroed() };
 
-    println!("input_len: {}", input_len);
-
     Ok(for i in 0..input_len {
-        println!("test case : {}", i);
-
         let input_path = String::from("test_cases/input/input") + &i.to_string() + ".txt" + "\0";
         let output_path = String::from("test_cases/result/result") + &i.to_string() + ".txt" + "\0";
 
