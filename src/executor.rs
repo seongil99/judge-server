@@ -83,7 +83,7 @@ impl Limits {
     }
 }
 
-pub fn main() {
+pub fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut result_time_file = File::create("result/time.txt").unwrap();
     result_time_file.write_all("0".as_bytes()).unwrap();
 
@@ -116,7 +116,7 @@ pub fn main() {
             compile_result_file
                 .write_all("1".as_bytes())
                 .expect("failed to write compile result");
-            return;
+            return Err("compile error".into());
         }
     }
 
@@ -153,7 +153,7 @@ pub fn main() {
 
     println!("input_len: {}", input_len);
 
-    for i in 0..input_len {
+    Ok(for i in 0..input_len {
         println!("test case : {}", i);
 
         let input_path = String::from("test_cases/input/input") + &i.to_string() + ".txt" + "\0";
@@ -257,5 +257,5 @@ pub fn main() {
         } else {
             panic!("Fork failed");
         }
-    }
+    })
 }
