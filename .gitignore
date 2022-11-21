@@ -1,4 +1,5 @@
 /target/*
+/result/*
 /test_cases/input/*
 /test_cases/output/*
 /test_cases/result/*
