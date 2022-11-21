@@ -118,7 +118,7 @@ pub fn clean() {
         .expect("failed to wait on rm main.c");
 }
 
-pub fn main() {
+pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_files_txt: Vec<_> = input_files
@@ -151,6 +151,7 @@ pub fn main() {
         match output_text.trim_end() == answer_text.trim_end() {
             true => {
                 println!("{}: Accepted", i);
+                judge_status = Status::Accepted;
             }
             false => {
                 println!("{}: Wrong Answer", i);
@@ -158,4 +159,5 @@ pub fn main() {
             }
         }
     }
+    Ok(judge_status)
 }

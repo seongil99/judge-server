@@ -63,17 +63,39 @@ pub fn consume(chan: lapin::Channel) {
                 problem.write_code_file();
                 problem.write_testcase_file();
 
-                executor::main();
+                let exe_result = executor::main();
 
-                judge::main();
+                match exe_result {
+                    Ok(result) => {
+                        let judge_result = judge::main();
+                        let mut judge_status: Status;
+                        match judge_result {
+                            Ok(judge_result) => {
+                                judge_status = judge_result;
+                            }
+                            Err(e) => {
+                                judge_status = Status::SystemError;
+                            }
+                        }
 
-                let mut judge_result =
-                    JudgeResult::from_result_files(Status::Accepted, problem.answer_id);
-                let judge_result_json = serde_json::to_string(&judge_result).unwrap();
-                info!(?judge_result_json, "judge_result_json");
+                        let mut judge_result =
+                            JudgeResult::from_result_files(judge_status, problem.answer_id);
+                        let judge_result_json = serde_json::to_string(&judge_result).unwrap();
 
-                let publish_channel = publisher::create_channel(addr);
-                publisher::publish(publish_channel, judge_result);
+                        info!(?judge_result_json, "judge_result_json");
+
+                        let publish_channel = publisher::create_channel(addr);
+                        publisher::publish(publish_channel, judge_result);
+                    }
+                    Err(e) => {
+                        let judge_result =
+                            JudgeResult::from_result_files(Status::CompileError, problem.answer_id);
+                        info!(?e, "error");
+
+                        let publish_channel = publisher::create_channel(addr);
+                        publisher::publish(publish_channel, judge_result);
+                    }
+                }
 
                 judge::clean();
             }
