@@ -5,6 +5,7 @@ use tracing::info;
 use crate::{
     executor::{self, Problem},
     judge::{self, JudgeResult, Status},
+    publisher,
 };
 
 pub fn create_channel(addr: &str) -> lapin::Channel {
@@ -70,6 +71,9 @@ pub fn consume(chan: lapin::Channel) {
                     JudgeResult::from_result_files(Status::Accepted, problem.answer_id);
                 let judge_result_json = serde_json::to_string(&judge_result).unwrap();
                 info!(?judge_result_json, "judge_result_json");
+
+                let publish_channel = publisher::create_channel(addr);
+                publisher::publish(publish_channel, judge_result);
 
                 judge::clean();
             }
