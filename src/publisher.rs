@@ -6,7 +6,6 @@ use lapin::{
     BasicProperties, Connection, ConnectionProperties,
 };
 use serde_json::json;
-use tracing::info;
 
 use crate::judge::JudgeResult;
 
@@ -20,22 +19,8 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
             .await
             .expect("connection error");
 
-        info!("CONNECTED");
-
         //receive channel
         let channel = conn.create_channel().await.expect("create_channel");
-        info!(state=?conn.status().state());
-
-        let queue = channel
-            .queue_declare(
-                QUEUE_NAME,
-                QueueDeclareOptions::default(),
-                FieldTable::default(),
-            )
-            .await
-            .expect("queue_declare");
-        info!(state=?conn.status().state());
-        info!(?queue, "Declared queue");
 
         channel
     })
@@ -43,30 +28,21 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
 
 pub fn publish(chan: lapin::Channel, msg: JudgeResult) {
     async_global_executor::block_on(async {
-    let queue = chan
-        .queue_declare(
-            QUEUE_NAME,
-            QueueDeclareOptions::default(),
-            FieldTable::default(),
-        )
-        .await
-        .expect("queue_declare");
-
-    chan.confirm_select(ConfirmSelectOptions::default())
-        .await
-        .expect("confirm_select");
-    let confirm = chan
-        .basic_publish(
-            "",
-            QUEUE_NAME,
-            BasicPublishOptions::default(),
-            serde_json::to_string(&msg).unwrap().as_bytes(),
-            BasicProperties::default(),
-        )
-        .await
-        .expect("basic_publish")
-        .await // Wait for this specific ack/nack
-        .expect("publisher-confirms");
-    confirm.is_ack();
+        chan.confirm_select(ConfirmSelectOptions::default())
+            .await
+            .expect("confirm_select");
+        let confirm = chan
+            .basic_publish(
+                "",
+                QUEUE_NAME,
+                BasicPublishOptions::default(),
+                serde_json::to_string(&msg).unwrap().as_bytes(),
+                BasicProperties::default(),
+            )
+            .await
+            .expect("basic_publish")
+            .await // Wait for this specific ack/nack
+            .expect("publisher-confirms");
+        confirm.is_ack();
     });
 }

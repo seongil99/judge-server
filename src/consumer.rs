@@ -1,6 +1,5 @@
 use futures_lite::StreamExt;
 use lapin::{options::*, types::FieldTable, Connection, ConnectionProperties};
-use tracing::info;
 
 use crate::{
     executor::{self, Problem},
@@ -15,22 +14,8 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
             .await
             .expect("connection error");
 
-        info!("CONNECTED");
-
         //receive channel
         let channel = conn.create_channel().await.expect("create_channel");
-        info!(state=?conn.status().state());
-
-        let queue = channel
-            .queue_declare(
-                "to_rust",
-                QueueDeclareOptions::default(),
-                FieldTable::default(),
-            )
-            .await
-            .expect("queue_declare");
-        info!(state=?conn.status().state());
-        info!(?queue, "Declared queue");
 
         channel
     })
@@ -50,7 +35,6 @@ pub fn consume(chan: lapin::Channel) {
             .expect("basic_consume");
 
         while let Some(delivery) = consumer.next().await {
-            info!(message=?delivery, "received message");
             if let Ok(delivery) = delivery {
                 delivery
                     .ack(BasicAckOptions::default())
@@ -82,15 +66,12 @@ pub fn consume(chan: lapin::Channel) {
                             JudgeResult::from_result_files(judge_status, problem.answer_id);
                         let judge_result_json = serde_json::to_string(&judge_result).unwrap();
 
-                        info!(?judge_result_json, "judge_result_json");
-
                         let publish_channel = publisher::create_channel(addr);
                         publisher::publish(publish_channel, judge_result);
                     }
                     Err(e) => {
                         let judge_result =
                             JudgeResult::from_result_files(Status::CompileError, problem.answer_id);
-                        info!(?e, "error");
 
                         let publish_channel = publisher::create_channel(addr);
                         publisher::publish(publish_channel, judge_result);

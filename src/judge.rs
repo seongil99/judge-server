@@ -3,7 +3,6 @@ use std::io::{BufReader, Read, Write};
 use std::process::Command;
 
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 #[derive(Serialize, Deserialize)]
 pub struct JudgeResult {
@@ -130,8 +129,6 @@ pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
         .collect();
     let input_len = input_files_txt.len();
 
-    info!(?input_len, "input_len");
-
     let mut judge_status = Status::Accepted;
 
     for i in 0..input_len {
@@ -150,11 +147,9 @@ pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
 
         match output_text.trim_end() == answer_text.trim_end() {
             true => {
-                println!("{}: Accepted", i);
                 judge_status = Status::Accepted;
             }
             false => {
-                println!("{}: Wrong Answer", i);
                 judge_status = Status::WrongAnswer;
             }
         }
