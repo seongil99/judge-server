@@ -17,15 +17,6 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
         //receive channel
         let channel = conn.create_channel().await.expect("create_channel");
 
-        let queue = channel
-            .queue_declare(
-                "to_rust",
-                QueueDeclareOptions::default(),
-                FieldTable::default(),
-            )
-            .await
-            .expect("queue_declare");
-
         channel
     })
 }
