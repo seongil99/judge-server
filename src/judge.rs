@@ -4,6 +4,9 @@ use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(debug_assertions)]
+use tracing::info;
+
 #[derive(Serialize, Deserialize)]
 pub struct JudgeResult {
     result: String,
@@ -128,6 +131,9 @@ pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
         })
         .collect();
     let input_len = input_files_txt.len();
+
+    #[cfg(debug_assertions)]
+    info!(?input_len, "input_len");
 
     let mut judge_status = Status::Accepted;
 

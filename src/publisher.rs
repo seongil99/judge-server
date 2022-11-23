@@ -7,6 +7,9 @@ use lapin::{
 };
 use serde_json::json;
 
+#[cfg(debug_assertions)]
+use tracing::info;
+
 use crate::judge::JudgeResult;
 
 const QUEUE_NAME: &str = "to_spring";
@@ -19,8 +22,26 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
             .await
             .expect("connection error");
 
+        #[cfg(debug_assertions)]
+        info!("CONNECTED");
+
         //receive channel
         let channel = conn.create_channel().await.expect("create_channel");
+        #[cfg(debug_assertions)]
+        {
+            info!(state=?conn.status().state());
+
+            let queue = channel
+                .queue_declare(
+                    QUEUE_NAME,
+                    QueueDeclareOptions::default(),
+                    FieldTable::default(),
+                )
+                .await
+                .expect("queue_declare");
+            info!(state=?conn.status().state());
+            info!(?queue, "Declared queue");
+        }
 
         channel
     })
@@ -28,6 +49,15 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
 
 pub fn publish(chan: lapin::Channel, msg: JudgeResult) {
     async_global_executor::block_on(async {
+        let queue = chan
+            .queue_declare(
+                QUEUE_NAME,
+                QueueDeclareOptions::default(),
+                FieldTable::default(),
+            )
+            .await
+            .expect("queue_declare");
+
         chan.confirm_select(ConfirmSelectOptions::default())
             .await
             .expect("confirm_select");

@@ -8,6 +8,9 @@ use std::{
     process::Command,
 };
 
+#[cfg(debug_assertions)]
+use tracing::info;
+
 use crate::filter;
 use crate::judge;
 
@@ -129,6 +132,9 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
     let input_len = input_files_txt.len();
+
+    #[cfg(debug_assertions)]
+    info!("input_len: {}", input_len);
 
     // set rlimit
     let rlim_mem = libc::rlimit {
