@@ -1,11 +1,4 @@
-use lapin::{
-    message::{BasicReturnMessage, Delivery},
-    options::*,
-    protocol::{AMQPErrorKind, AMQPSoftError},
-    types::FieldTable,
-    BasicProperties, Connection, ConnectionProperties,
-};
-use serde_json::json;
+use lapin::{options::*, types::FieldTable, BasicProperties, Connection, ConnectionProperties};
 
 #[cfg(debug_assertions)]
 use tracing::info;
@@ -13,7 +6,6 @@ use tracing::info;
 use crate::judge::JudgeResult;
 
 const QUEUE_NAME: &str = "to_spring";
-const QUEUE_ADDR: &str = "ampq://rabbitmq:5672/%2f";
 
 pub fn create_channel(addr: &str) -> lapin::Channel {
     let addr = std::env::var("AMQP_ADDR").unwrap_or_else(|_| addr.into());
@@ -49,7 +41,7 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
 
 pub fn publish(chan: lapin::Channel, msg: JudgeResult) {
     async_global_executor::block_on(async {
-        let queue = chan
+        let _queue = chan
             .queue_declare(
                 QUEUE_NAME,
                 QueueDeclareOptions::default(),
@@ -74,5 +66,6 @@ pub fn publish(chan: lapin::Channel, msg: JudgeResult) {
             .await // Wait for this specific ack/nack
             .expect("publisher-confirms");
         confirm.is_ack();
+        chan.close(200, "Bye").await.expect("close");
     });
 }

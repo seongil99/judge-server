@@ -57,8 +57,6 @@ pub fn consume(chan: lapin::Channel) {
             .expect("basic_consume");
 
         while let Some(delivery) = consumer.next().await {
-            #[cfg(debug_assertions)]
-            info!(message=?delivery, "received message");
             if let Ok(delivery) = delivery {
                 delivery
                     .ack(BasicAckOptions::default())
@@ -74,19 +72,22 @@ pub fn consume(chan: lapin::Channel) {
                 let exe_result = executor::main();
 
                 match exe_result {
-                    Ok(result) => {
+                    Ok(_result) => {
                         let judge_result = judge::main();
-                        let mut judge_status: Status;
+                        let judge_status: Status;
                         match judge_result {
                             Ok(judge_result) => {
                                 judge_status = judge_result;
                             }
                             Err(e) => {
+                                #[cfg(debug_assertions)]
+                                info!(?e, "judge error");
+
                                 judge_status = Status::SystemError;
                             }
                         }
 
-                        let mut judge_result =
+                        let judge_result =
                             JudgeResult::from_result_files(judge_status, problem.answer_id);
                         let judge_result_json = serde_json::to_string(&judge_result).unwrap();
 

@@ -1,10 +1,9 @@
-use judge::Status;
 use serde::{Deserialize, Serialize};
 use std::{
     cmp,
     ffi::c_char,
     fs::File,
-    io::{BufReader, Read, Write},
+    io::{Read, Write},
     process::Command,
 };
 
@@ -12,7 +11,6 @@ use std::{
 use tracing::info;
 
 use crate::filter;
-use crate::judge;
 
 #[derive(Serialize, Deserialize)]
 pub struct TestCase {
@@ -25,6 +23,8 @@ pub struct Problem {
     pub answer_id: u64,
     language: String,
     code: String,
+    time_limit: u64,
+    memory_limit: u64,
     testcases: Vec<TestCase>,
 }
 
@@ -53,11 +53,13 @@ impl Problem {
     }
 }
 
+#[allow(dead_code)]
 pub struct Limits {
     time: u64,
     memory: u64,
 }
 
+#[allow(dead_code)]
 impl Limits {
     pub fn new(time: u64, memory: u64) -> Self {
         Self { time, memory }
@@ -138,11 +140,11 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // set rlimit
     let rlim_mem = libc::rlimit {
-        rlim_cur: 250000000,
+        rlim_cur: 1000000000,
         rlim_max: libc::RLIM_INFINITY,
     };
     let rlim_cpu = libc::rlimit {
-        rlim_cur: 3,
+        rlim_cur: 5,
         rlim_max: libc::RLIM_INFINITY,
     };
 
@@ -207,7 +209,8 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                     libc::close(fd_out);
                 }
 
-                println!("main.c exited with status {}", status);
+                #[cfg(debug_assertions)]
+                info!("main.c exited with status {}", status);
 
                 // get resource usage from child process
                 unsafe {

@@ -3,8 +3,6 @@ use tracing::info;
 #[cfg(debug_assertions)]
 use tracing_subscriber;
 
-use judge::JudgeResult;
-
 mod consumer;
 mod executor;
 mod filter;

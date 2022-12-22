@@ -1,5 +1,5 @@
-use std::fs::{self, File};
-use std::io::{BufReader, Read, Write};
+use std::fs::File;
+use std::io::{BufReader, Read};
 use std::process::Command;
 
 use serde::{Deserialize, Serialize};
@@ -15,39 +15,7 @@ pub struct JudgeResult {
     answer_id: u64,
 }
 
-#[derive(Serialize, Deserialize)]
-pub enum Status {
-    Accepted,
-    Proceeding,
-    WrongAnswer,
-    TimeLimitExceeded,
-    MemoryLimitExceeded,
-    CompileError,
-    RuntimeError,
-    SystemError,
-}
-
 impl JudgeResult {
-    fn cvt_status_string(result: Status) -> String {
-        String::from(match result {
-            Accepted => "Accepted",
-            WrongAnswer => "WrongAnswer",
-            TimeLimitExceeded => "TimeLimitExceeded",
-            MemoryLimitExceeded => "MemoryLimitExceeded",
-            RuntimeError => "RuntimeError",
-            SystemError => "SystemError",
-        })
-    }
-
-    pub fn new(result: Status, time: u64, memory: u64, answer_id: u64) -> Self {
-        Self {
-            time,
-            memory,
-            answer_id,
-            result: JudgeResult::cvt_status_string(result),
-        }
-    }
-
     pub fn from_result_files(status: Status, answer_id: u64) -> Self {
         let mut result_file_memory = File::open("result/memory.txt").unwrap();
         let mut result_file_time = File::open("result/time.txt").unwrap();
@@ -81,6 +49,19 @@ impl JudgeResult {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub enum Status {
+    Accepted,
+    Proceeding,
+    WrongAnswer,
+    TimeLimitExceeded,
+    MemoryLimitExceeded,
+    CompileError,
+    RuntimeError,
+    SystemError,
+}
+
+#[allow(dead_code)]
 impl Status {
     pub fn to_string(&self) -> String {
         match self {
