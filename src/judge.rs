@@ -31,16 +31,7 @@ impl JudgeResult {
         let memory: u64 = memory.parse().unwrap();
         let time: u64 = time.parse().unwrap();
 
-        let result_string = match status {
-            Status::Accepted => String::from("Accepted"),
-            Status::WrongAnswer => String::from("Wrong Answer"),
-            Status::TimeLimitExceeded => String::from("Time Limit Exceeded"),
-            Status::MemoryLimitExceeded => String::from("Memory Limit Exceeded"),
-            Status::CompileError => String::from("Compile Error"),
-            Status::RuntimeError => String::from("Runtime Error"),
-            Status::SystemError => String::from("System Error"),
-            _ => String::from(""),
-        };
+        let result_string = status.to_string();
 
         Self {
             answer_id,
@@ -75,6 +66,7 @@ impl Status {
             Status::CompileError => "CompileError".to_string(),
             Status::RuntimeError => "RuntimeError".to_string(),
             Status::SystemError => "SystemError".to_string(),
+            _ => "".to_string(),
         }
     }
 }
