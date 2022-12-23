@@ -8,6 +8,8 @@ services:
       dockerfile: Dockerfile.develop
     volumes:
       - ./src:/app/src
+      - ./cargo.toml:/app/cargo.toml
+      - ./cargo.lock:/app/cargo.lock
     tty: true
 
   rabbitmq:
