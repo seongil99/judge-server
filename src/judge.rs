@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(debug_assertions)]
 use tracing::info;
 
+use crate::executor::Problem;
+
 #[derive(Serialize, Deserialize)]
 pub struct JudgeResult {
     result: String,
@@ -101,7 +103,7 @@ pub fn clean() {
         .expect("failed to wait on rm main.c");
 }
 
-pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
+pub fn main(&problem: Problem) -> Result<Status, Box<dyn std::error::Error>> {
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_files_txt: Vec<_> = input_files
@@ -141,5 +143,29 @@ pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
             }
         }
     }
+
+    let mut memory_file = File::open("result/memory.txt").unwrap();
+    let mut time_file = File::open("result/time.txt").unwrap();
+
+    let mut memory_usage = String::new();
+    let mut time_usage = String::new();
+
+    let mut buf_reader = BufReader::new(memory_file);
+    buf_reader.read_to_string(&mut memory_usage).unwrap();
+
+    let mut buf_reader = BufReader::new(time_file);
+    buf_reader.read_to_string(&mut time_usage).unwrap();
+
+    let memory_usage: u64 = memory_usage.parse().unwrap();
+    let time_usage: u64 = time_usage.parse().unwrap();
+
+    if memory_usage > problem.memory_limit {
+        judge_status = Status::MemoryLimitExceeded;
+    }
+
+    if time_usage > problem.time_limit {
+        judge_status = Status::TimeLimitExceeded;
+    }
+
     Ok(judge_status)
 }

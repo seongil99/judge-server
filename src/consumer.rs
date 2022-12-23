@@ -72,8 +72,8 @@ pub fn consume(chan: lapin::Channel) {
                 let exe_result = executor::main();
 
                 match exe_result {
-                    Ok(_result) => {
-                        let judge_result = judge::main();
+                    Ok(_) => {
+                        let judge_result = judge::main(&problem);
                         let judge_status: Status;
                         match judge_result {
                             Ok(judge_result) => {
@@ -97,12 +97,12 @@ pub fn consume(chan: lapin::Channel) {
                         let publish_channel = publisher::create_channel(addr);
                         publisher::publish(publish_channel, judge_result);
                     }
-                    Err(e) => {
+                    Err(exe_err) => {
                         let judge_result =
-                            JudgeResult::from_result_files(Status::CompileError, problem.answer_id);
+                            JudgeResult::from_result_files(Status::RuntimeError, problem.answer_id);
 
                         #[cfg(debug_assertions)]
-                        info!(?e, "error");
+                        info!(?exe_err, "error");
 
                         let publish_channel = publisher::create_channel(addr);
                         publisher::publish(publish_channel, judge_result);

@@ -120,7 +120,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
             compile_result_file
                 .write_all("1".as_bytes())
                 .expect("failed to write compile result");
-            return Err("compile error".into());
+            return Ok(());
         }
     }
 
