@@ -7,9 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile.develop
     volumes:
-      - .:/app
+      - ./src:/app/src
     tty: true
-    restart: always
 
   rabbitmq:
     container_name: rabbitmq
