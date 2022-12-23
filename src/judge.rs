@@ -127,11 +127,10 @@ pub fn main(&problem: Problem) -> Result<Status, Box<dyn std::error::Error>> {
         buf_reader.read_to_string(&mut answer_text).unwrap();
 
         match output_text.trim_end() == answer_text.trim_end() {
-            true => {
-                judge_status = Status::Accepted;
-            }
+            true => {}
             false => {
                 judge_status = Status::WrongAnswer;
+                break;
             }
         }
     }
