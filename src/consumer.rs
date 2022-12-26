@@ -1,7 +1,6 @@
 use futures_lite::StreamExt;
 use lapin::{options::*, types::FieldTable, Connection, ConnectionProperties};
 
-#[cfg(debug_assertions)]
 use tracing::info;
 
 use crate::{
@@ -80,7 +79,6 @@ pub fn consume(chan: lapin::Channel) {
                                 judge_status = judge_result;
                             }
                             Err(e) => {
-                                #[cfg(debug_assertions)]
                                 info!(?e, "judge error");
 
                                 judge_status = Status::SystemError;
@@ -91,7 +89,6 @@ pub fn consume(chan: lapin::Channel) {
                             JudgeResult::from_result_files(judge_status, problem.answer_id);
                         let judge_result_json = serde_json::to_string(&judge_result).unwrap();
 
-                        #[cfg(debug_assertions)]
                         info!(?judge_result_json, "judge_result_json");
 
                         let publish_channel = publisher::create_channel(addr);
@@ -101,7 +98,6 @@ pub fn consume(chan: lapin::Channel) {
                         let judge_result =
                             JudgeResult::from_result_files(Status::RuntimeError, problem.answer_id);
 
-                        #[cfg(debug_assertions)]
                         info!(?exe_err, "error");
 
                         let publish_channel = publisher::create_channel(addr);

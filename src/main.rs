@@ -1,6 +1,4 @@
-#[cfg(debug_assertions)]
 use tracing::info;
-#[cfg(debug_assertions)]
 use tracing_subscriber;
 
 mod consumer;
@@ -11,13 +9,11 @@ mod publisher;
 
 fn main() {
     #[cfg(debug_assertions)]
-    {
-        info!("test");
-        if std::env::var("RUST_LOG").is_err() {
-            std::env::set_var("RUST_LOG", "info");
-        }
-        tracing_subscriber::fmt::init();
+    info!("test");
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
     }
+    tracing_subscriber::fmt::init();
 
     let addr = "amqp://rabbitmq:5672/%2f";
 

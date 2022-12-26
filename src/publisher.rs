@@ -1,6 +1,5 @@
 use lapin::{options::*, types::FieldTable, BasicProperties, Connection, ConnectionProperties};
 
-#[cfg(debug_assertions)]
 use tracing::info;
 
 use crate::judge::JudgeResult;

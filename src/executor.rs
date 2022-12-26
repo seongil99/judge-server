@@ -189,7 +189,9 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
             unsafe {
                 libc::getrusage(libc::RUSAGE_SELF, &mut ruse);
             }
+
             let memory_start = ruse.ru_maxrss;
+            #[cfg(debug_assertions)]
             info!("memory_start: {}", memory_start);
 
             let mut status_1: libc::c_int = 0;
@@ -218,8 +220,11 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 let memory_end = ruse.ru_maxrss;
+                #[cfg(debug_assertions)]
                 info!("memory_end: {}", memory_end);
+
                 let memory = memory_end - memory_start;
+                #[cfg(debug_assertions)]
                 info!("memory: {}", memory);
 
                 // close file descriptors
