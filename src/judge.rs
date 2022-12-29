@@ -94,7 +94,7 @@ pub fn clean() {
         .expect("failed to wait on rm main.c");
 }
 
-pub fn main(&problem: Problem) -> Result<Status, Box<dyn std::error::Error>> {
+pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_files_txt: Vec<_> = input_files
@@ -149,12 +149,12 @@ pub fn main(&problem: Problem) -> Result<Status, Box<dyn std::error::Error>> {
     let memory_usage: u64 = memory_usage.parse().unwrap();
     let time_usage: u64 = time_usage.parse().unwrap();
 
-    judge_status = if memory_usage > problem.memory_limit {
-        Status::MemoryLimitExceeded
+    if memory_usage > problem.memory_limit {
+        judge_status = Status::MemoryLimitExceeded
     };
 
-    judge_status = if time_usage > problem.time_limit {
-        Status::TimeLimitExceeded
+    if time_usage > problem.time_limit {
+        judge_status = Status::TimeLimitExceeded
     };
 
     Ok(judge_status)

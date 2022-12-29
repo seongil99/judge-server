@@ -23,8 +23,8 @@ pub struct Problem {
     pub answer_id: u64,
     language: String,
     code: String,
-    time_limit: u64,
-    memory_limit: u64,
+    pub time_limit: u64,
+    pub memory_limit: u64,
     testcases: Vec<TestCase>,
 }
 
