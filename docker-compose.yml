@@ -3,11 +3,14 @@ version: "3"
 services:
   test:
     container_name: judge-server
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.develop
     volumes:
-      - .:/app
+      - ./src:/app/src
+      - ./cargo.toml:/app/cargo.toml
+      - ./cargo.lock:/app/cargo.lock
     tty: true
-    restart: always
 
   rabbitmq:
     container_name: rabbitmq

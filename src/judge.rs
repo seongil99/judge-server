@@ -1,8 +1,12 @@
-use std::fs::{self, File};
-use std::io::{BufReader, Read, Write};
+use std::fs::File;
+use std::io::{BufReader, Read};
 use std::process::Command;
 
 use serde::{Deserialize, Serialize};
+
+use tracing::info;
+
+use crate::executor::Problem;
 
 #[derive(Serialize, Deserialize)]
 pub struct JudgeResult {
@@ -10,6 +14,31 @@ pub struct JudgeResult {
     time: u64,
     memory: u64,
     answer_id: u64,
+}
+
+impl JudgeResult {
+    pub fn from_result_files(status: Status, answer_id: u64) -> Self {
+        let mut result_file_memory = File::open("result/memory.txt").unwrap();
+        let mut result_file_time = File::open("result/time.txt").unwrap();
+
+        let mut memory = String::new();
+        let mut time = String::new();
+
+        result_file_memory.read_to_string(&mut memory).unwrap();
+        result_file_time.read_to_string(&mut time).unwrap();
+
+        let memory: u64 = memory.parse().unwrap();
+        let time: u64 = time.parse().unwrap();
+
+        let result_string = status.to_string();
+
+        Self {
+            answer_id,
+            time,
+            memory,
+            result: result_string,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -24,60 +53,7 @@ pub enum Status {
     SystemError,
 }
 
-impl JudgeResult {
-    fn cvt_status_string(result: Status) -> String {
-        String::from(match result {
-            Accepted => "Accepted",
-            WrongAnswer => "WrongAnswer",
-            TimeLimitExceeded => "TimeLimitExceeded",
-            MemoryLimitExceeded => "MemoryLimitExceeded",
-            RuntimeError => "RuntimeError",
-            SystemError => "SystemError",
-        })
-    }
-
-    pub fn new(result: Status, time: u64, memory: u64, answer_id: u64) -> Self {
-        Self {
-            time,
-            memory,
-            answer_id,
-            result: JudgeResult::cvt_status_string(result),
-        }
-    }
-
-    pub fn from_result_files(status: Status, answer_id: u64) -> Self {
-        let mut result_file_memory = File::open("result/memory.txt").unwrap();
-        let mut result_file_time = File::open("result/time.txt").unwrap();
-
-        let mut memory = String::new();
-        let mut time = String::new();
-
-        result_file_memory.read_to_string(&mut memory).unwrap();
-        result_file_time.read_to_string(&mut time).unwrap();
-
-        let memory: u64 = memory.parse().unwrap();
-        let time: u64 = time.parse().unwrap();
-
-        let result_string = match status {
-            Status::Accepted => String::from("Accepted"),
-            Status::WrongAnswer => String::from("Wrong Answer"),
-            Status::TimeLimitExceeded => String::from("Time Limit Exceeded"),
-            Status::MemoryLimitExceeded => String::from("Memory Limit Exceeded"),
-            Status::CompileError => String::from("Compile Error"),
-            Status::RuntimeError => String::from("Runtime Error"),
-            Status::SystemError => String::from("System Error"),
-            _ => String::from(""),
-        };
-
-        Self {
-            answer_id,
-            time,
-            memory,
-            result: result_string,
-        }
-    }
-}
-
+#[allow(dead_code)]
 impl Status {
     pub fn to_string(&self) -> String {
         match self {
@@ -89,6 +65,7 @@ impl Status {
             Status::CompileError => "CompileError".to_string(),
             Status::RuntimeError => "RuntimeError".to_string(),
             Status::SystemError => "SystemError".to_string(),
+            _ => "".to_string(),
         }
     }
 }
@@ -117,7 +94,7 @@ pub fn clean() {
         .expect("failed to wait on rm main.c");
 }
 
-pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
+pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_files_txt: Vec<_> = input_files
@@ -128,6 +105,9 @@ pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
         })
         .collect();
     let input_len = input_files_txt.len();
+
+    #[cfg(debug_assertions)]
+    info!(?input_len, "input_len");
 
     let mut judge_status = Status::Accepted;
 
@@ -146,13 +126,36 @@ pub fn main() -> Result<Status, Box<dyn std::error::Error>> {
         buf_reader.read_to_string(&mut answer_text).unwrap();
 
         match output_text.trim_end() == answer_text.trim_end() {
-            true => {
-                judge_status = Status::Accepted;
-            }
+            true => {}
             false => {
                 judge_status = Status::WrongAnswer;
+                break;
             }
         }
     }
+
+    let mut memory_file = File::open("result/memory.txt").unwrap();
+    let mut time_file = File::open("result/time.txt").unwrap();
+
+    let mut memory_usage = String::new();
+    let mut time_usage = String::new();
+
+    let mut buf_reader = BufReader::new(memory_file);
+    buf_reader.read_to_string(&mut memory_usage).unwrap();
+
+    let mut buf_reader = BufReader::new(time_file);
+    buf_reader.read_to_string(&mut time_usage).unwrap();
+
+    let memory_usage: u64 = memory_usage.parse().unwrap();
+    let time_usage: u64 = time_usage.parse().unwrap();
+
+    if memory_usage > problem.memory_limit {
+        judge_status = Status::MemoryLimitExceeded
+    };
+
+    if time_usage > problem.time_limit {
+        judge_status = Status::TimeLimitExceeded
+    };
+
     Ok(judge_status)
 }

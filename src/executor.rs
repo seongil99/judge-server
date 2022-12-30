@@ -1,15 +1,16 @@
-use judge::Status;
 use serde::{Deserialize, Serialize};
 use std::{
     cmp,
     ffi::c_char,
     fs::File,
-    io::{BufReader, Read, Write},
+    io::{Read, Write},
     process::Command,
 };
 
+#[cfg(debug_assertions)]
+use tracing::info;
+
 use crate::filter;
-use crate::judge;
 
 #[derive(Serialize, Deserialize)]
 pub struct TestCase {
@@ -22,6 +23,8 @@ pub struct Problem {
     pub answer_id: u64,
     language: String,
     code: String,
+    pub time_limit: u64,
+    pub memory_limit: u64,
     testcases: Vec<TestCase>,
 }
 
@@ -50,11 +53,13 @@ impl Problem {
     }
 }
 
+#[allow(dead_code)]
 pub struct Limits {
     time: u64,
     memory: u64,
 }
 
+#[allow(dead_code)]
 impl Limits {
     pub fn new(time: u64, memory: u64) -> Self {
         Self { time, memory }
@@ -115,7 +120,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
             compile_result_file
                 .write_all("1".as_bytes())
                 .expect("failed to write compile result");
-            return Err("compile error".into());
+            return Ok(());
         }
     }
 
@@ -130,20 +135,8 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
     let input_len = input_files_txt.len();
 
-    // set rlimit
-    let rlim_mem = libc::rlimit {
-        rlim_cur: 250000000,
-        rlim_max: libc::RLIM_INFINITY,
-    };
-    let rlim_cpu = libc::rlimit {
-        rlim_cur: 3,
-        rlim_max: libc::RLIM_INFINITY,
-    };
-
-    unsafe {
-        libc::setrlimit(libc::RLIMIT_AS, &rlim_mem);
-        libc::setrlimit(libc::RLIMIT_CPU, &rlim_cpu);
-    }
+    #[cfg(debug_assertions)]
+    info!("input_len: {}", input_len);
 
     // init rusage
     let mut ruse: libc::rusage = unsafe { std::mem::zeroed() };
@@ -161,6 +154,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                 libc::S_IRUSR | libc::S_IWUSR | libc::S_IRGRP | libc::S_IWGRP | libc::S_IROTH, // 0644
             )
         };
+        let mut status_0: libc::c_int = 0;
 
         let pid = unsafe { libc::fork() };
         if pid == 0 {
@@ -175,6 +169,32 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // release seccomp filter
             filter.release();
+
+            // set rlimit
+            let rlim_mem = libc::rlimit {
+                rlim_cur: 1000000000,
+                rlim_max: libc::RLIM_INFINITY,
+            };
+            let rlim_cpu = libc::rlimit {
+                rlim_cur: 5,
+                rlim_max: libc::RLIM_INFINITY,
+            };
+
+            unsafe {
+                libc::setrlimit(libc::RLIMIT_AS, &rlim_mem);
+                libc::setrlimit(libc::RLIMIT_CPU, &rlim_cpu);
+            }
+
+            // get resource usage from child process
+            unsafe {
+                libc::getrusage(libc::RUSAGE_SELF, &mut ruse);
+            }
+
+            let memory_start = ruse.ru_maxrss;
+            #[cfg(debug_assertions)]
+            info!("memory_start: {}", memory_start);
+
+            let mut status_1: libc::c_int = 0;
 
             let pid_c = unsafe { libc::fork() };
             if pid_c == 0 {
@@ -192,8 +212,20 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             } else if pid_c > 0 {
                 // wait for child process
-                let mut status: libc::c_int = 0;
-                unsafe { libc::wait(&mut status) };
+                unsafe { libc::wait(&mut status_1) };
+
+                // get resource usage from child process
+                unsafe {
+                    libc::getrusage(libc::RUSAGE_CHILDREN, &mut ruse);
+                }
+
+                let memory_end = ruse.ru_maxrss;
+                #[cfg(debug_assertions)]
+                info!("memory_end: {}", memory_end);
+
+                let memory = memory_end - memory_start;
+                #[cfg(debug_assertions)]
+                info!("memory: {}", memory);
 
                 // close file descriptors
                 unsafe {
@@ -201,12 +233,8 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                     libc::close(fd_out);
                 }
 
-                println!("main.c exited with status {}", status);
-
-                // get resource usage from child process
-                unsafe {
-                    libc::getrusage(libc::RUSAGE_CHILDREN, &mut ruse);
-                }
+                #[cfg(debug_assertions)]
+                info!("main.c exited with status {}", status_1);
 
                 let mut result_time_file = File::open("result/time.txt").unwrap();
                 let mut result_time = String::new();
@@ -229,11 +257,11 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .read_to_string(&mut result_memory)
                     .unwrap();
                 let result_memory: i64 = result_memory.parse().unwrap();
-                match result_memory.cmp(&ruse.ru_maxrss) {
+                match result_memory.cmp(&memory) {
                     cmp::Ordering::Less => {
                         let mut result_memory_file = File::create("result/memory.txt").unwrap();
                         result_memory_file
-                            .write_all(ruse.ru_maxrss.to_string().as_bytes())
+                            .write_all(&memory.to_string().as_bytes())
                             .unwrap();
                     }
                     _ => {}
@@ -245,8 +273,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else if pid > 0 {
             // Parent process
             // wait for child process
-            let mut status: libc::c_int = 0;
-            unsafe { libc::wait(&mut status) };
+            unsafe { libc::wait(&mut status_0) };
         } else {
             panic!("Fork failed");
         }
