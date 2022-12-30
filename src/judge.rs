@@ -149,11 +149,11 @@ pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
     let memory_usage: u64 = memory_usage.parse().unwrap();
     let time_usage: u64 = time_usage.parse().unwrap();
 
-    if memory_usage > problem.memory_limit {
+    if memory_usage > problem.memory_limit * 1000 {
         judge_status = Status::MemoryLimitExceeded
     };
 
-    if time_usage > problem.time_limit {
+    if time_usage > problem.time_limit * 1000 {
         judge_status = Status::TimeLimitExceeded
     };
 
