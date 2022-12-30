@@ -40,12 +40,12 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
 
 pub fn publish(chan: lapin::Channel, msg: JudgeResult) {
     async_global_executor::block_on(async {
+        let queue_options = QueueDeclareOptions {
+            durable: true,
+            ..Default::default()
+        };
         let _queue = chan
-            .queue_declare(
-                QUEUE_NAME,
-                QueueDeclareOptions::default(),
-                FieldTable::default(),
-            )
+            .queue_declare(QUEUE_NAME, queue_options, FieldTable::default())
             .await
             .expect("queue_declare");
 
