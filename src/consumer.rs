@@ -81,7 +81,7 @@ pub fn consume(chan: lapin::Channel) {
                             Err(e) => {
                                 info!(?e, "judge error");
 
-                                judge_status = Status::SystemError;
+                                judge_status = Status::RuntimeError;
                             }
                         }
 

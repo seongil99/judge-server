@@ -22,7 +22,8 @@ data = {
     ]
 }
 
-for i in range(0, 100):
+for i in range(0, 10):
+    data.update({'answer_id': i})
     payload = json.dumps(data)
 
     connection = pika.BlockingConnection(
