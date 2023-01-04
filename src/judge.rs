@@ -65,7 +65,6 @@ impl Status {
             Status::CompileError => "CompileError".to_string(),
             Status::RuntimeError => "RuntimeError".to_string(),
             Status::SystemError => "SystemError".to_string(),
-            _ => "".to_string(),
         }
     }
 }
@@ -143,8 +142,8 @@ pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
         }
     }
 
-    let mut memory_file = File::open("result/memory.txt").unwrap();
-    let mut time_file = File::open("result/time.txt").unwrap();
+    let memory_file = File::open("result/memory.txt").unwrap();
+    let time_file = File::open("result/time.txt").unwrap();
 
     let mut memory_usage = String::new();
     let mut time_usage = String::new();

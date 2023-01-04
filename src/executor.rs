@@ -140,7 +140,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for i in 0..input_len {
         let result_path = String::from("test_cases/result/result") + &i.to_string() + ".txt";
-        let result_file = File::create(result_path).unwrap();
+        let _result_file = File::create(result_path).unwrap();
     }
 
     // init rusage
