@@ -22,12 +22,13 @@ pub fn create_channel(addr: &str) -> lapin::Channel {
         {
             info!(state=?conn.status().state());
 
+            let queue_options = QueueDeclareOptions {
+                durable: true,
+                ..Default::default()
+            };
+
             let queue = channel
-                .queue_declare(
-                    QUEUE_NAME,
-                    QueueDeclareOptions::default(),
-                    FieldTable::default(),
-                )
+                .queue_declare(QUEUE_NAME, queue_options, FieldTable::default())
                 .await
                 .expect("queue_declare");
             info!(state=?conn.status().state());

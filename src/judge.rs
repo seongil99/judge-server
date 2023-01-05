@@ -65,7 +65,6 @@ impl Status {
             Status::CompileError => "CompileError".to_string(),
             Status::RuntimeError => "RuntimeError".to_string(),
             Status::SystemError => "SystemError".to_string(),
-            _ => "".to_string(),
         }
     }
 }
@@ -95,6 +94,17 @@ pub fn clean() {
 }
 
 pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
+    let mut judge_status = Status::Accepted;
+
+    let compile_result_file = File::open("result/compile_result.txt").unwrap();
+    let mut buf_reader = BufReader::new(compile_result_file);
+    let mut compile_result = String::new();
+    buf_reader.read_to_string(&mut compile_result).unwrap();
+
+    if compile_result.trim_end() != "0" {
+        return Ok(Status::CompileError);
+    }
+
     let input_files_path = "test_cases/input";
     let input_files = std::fs::read_dir(input_files_path).unwrap();
     let input_files_txt: Vec<_> = input_files
@@ -108,8 +118,6 @@ pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
 
     #[cfg(debug_assertions)]
     info!(?input_len, "input_len");
-
-    let mut judge_status = Status::Accepted;
 
     for i in 0..input_len {
         let output_path = String::from("test_cases/output/output") + &i.to_string() + ".txt";
@@ -134,8 +142,8 @@ pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {
         }
     }
 
-    let mut memory_file = File::open("result/memory.txt").unwrap();
-    let mut time_file = File::open("result/time.txt").unwrap();
+    let memory_file = File::open("result/memory.txt").unwrap();
+    let time_file = File::open("result/time.txt").unwrap();
 
     let mut memory_usage = String::new();
     let mut time_usage = String::new();
