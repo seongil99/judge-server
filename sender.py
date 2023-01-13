@@ -6,8 +6,9 @@ QUEUE_NAME = 'to_rust'
 
 data = {
     'answer_id': 42,
-    'language': 'C',
-    'code': '#include<stdio.h>\n  int main()\n  {\n     int a, b;\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\", a+b);\n    return 0;\n }\n',
+    'language': 'C++',
+    # 'code': '#include<stdio.h>\n  int main()\n  {\n     int a, b;\n    scanf(\"%d %d\", &a, &b);\n    printf(\"%d\", a+b);\n    return 0;\n }\n',
+    'code': '#include <iostream>\nusing namespace std;\nint main() {\n    int a, b;\n    cin >> a >> b;\n    cout << a + b;\n    return 0;\n}\n',
     'memory_limit': 256000000,
     'time_limit': 2,
     'testcases': [
