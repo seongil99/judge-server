@@ -68,7 +68,7 @@ pub fn consume(chan: lapin::Channel) {
                 problem.write_code_file();
                 problem.write_testcase_file();
 
-                let exe_result = executor::main();
+                let exe_result = executor::main(&problem);
 
                 match exe_result {
                     Ok(_) => {

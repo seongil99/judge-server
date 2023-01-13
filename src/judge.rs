@@ -85,12 +85,21 @@ pub fn clean() {
         .wait()
         .expect("failed to wait on rm test_cases/output/*");
 
-    Command::new("rm")
-        .arg("main.c")
+    Command::new("sh")
+        .arg("-c")
+        .arg("rm main.c > /dev/null 2>&1")
         .spawn()
         .expect("failed to execute process")
         .wait()
         .expect("failed to wait on rm main.c");
+
+    Command::new("sh")
+        .arg("-c")
+        .arg("rm main.cpp > /dev/null 2>&1")
+        .spawn()
+        .expect("failed to execute process")
+        .wait()
+        .expect("failed to wait on rm main.cpp");
 }
 
 pub fn main(problem: &Problem) -> Result<Status, Box<dyn std::error::Error>> {

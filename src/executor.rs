@@ -35,7 +35,12 @@ impl Problem {
     }
 
     pub fn write_code_file(&self) {
-        let mut file = File::create("main.c").unwrap();
+        let file_name = match self.language.as_str() {
+            "C" => "main.c",
+            "C++" => "main.cpp",
+            _ => "main.c",
+        };
+        let mut file = File::create(file_name).unwrap();
         file.write_all(self.code.as_bytes()).unwrap();
     }
 
@@ -50,6 +55,24 @@ impl Problem {
             let mut file = File::create(output_path).unwrap();
             file.write_all(self.testcases[i].output.as_bytes()).unwrap();
         }
+    }
+
+    pub fn compile_code(&self) -> std::process::ExitStatus {
+        let mut compile_result_file = File::create("result/compile_result.txt").unwrap();
+        compile_result_file.write_all("".as_bytes()).unwrap();
+
+        let compile_command = match self.language.as_str() {
+            "C" => "gcc main.c -o a.out -O2 -Wall -lm -static -std=gnu99",
+            "C++" => "g++ main.cpp -o a.out -O2 -Wall -lm -static -std=c++17",
+            _ => "gcc main.c -o a.out",
+        };
+
+        let compile_result = Command::new("sh")
+            .args(&["-c", compile_command])
+            .status()
+            .expect("failed to execute process");
+
+        return compile_result;
     }
 }
 
@@ -87,7 +110,7 @@ impl Limits {
     }
 }
 
-pub fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub fn main(problem: &Problem) -> Result<(), Box<dyn std::error::Error>> {
     let mut result_time_file = File::create("result/time.txt").unwrap();
     result_time_file.write_all("0".as_bytes()).unwrap();
 
@@ -98,14 +121,7 @@ pub fn main() -> Result<(), Box<dyn std::error::Error>> {
     compile_result_file.write_all("".as_bytes()).unwrap();
 
     //compile main.c to a.out with gcc
-    let compile_result = Command::new("gcc")
-        .arg("-O2")
-        .arg("-Wall")
-        .arg("-std=c99")
-        .arg("-static")
-        .arg("main.c")
-        .status()
-        .expect("failed to execute process");
+    let compile_result = problem.compile_code();
 
     //check compile result
     match compile_result.success() {
